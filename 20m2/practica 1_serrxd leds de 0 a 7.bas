@@ -70,7 +70,7 @@ bucle_principal:
 ' Subrutina para revisar estado de botones
 revisar_botones:
     ' Bot?n de reset
-    if btn_reset = 0 then
+    if btn_reset = 1 then
         ' Reiniciar todo
         let led_actual = 0
         let modo = 0
@@ -80,7 +80,7 @@ revisar_botones:
     endif
     
     ' Bot?n de test
-    if btn_test = 0 then
+    if btn_test = 1 then
         ' Cambiar a modo test
         let modo = 1
         let led_actual = 0
