@@ -21,12 +21,14 @@ symbol BTN_RESET = C.4            ' Bot?n para resetear
 symbol velocidad = w0      ' Variable para almacenar la velocidad (word - 16 bits)
 symbol paso = b2           ' Variable para seguimiento del paso actual
 symbol estado_motor = b3   ' Estado del motor: 0 = parado, 1 = girando
+symbol giro = b4		   ' Giro del motor: 0 = derecha, 1 = izquierda
 
 ' Inicializaci?n
 inicio:
     let velocidad = 25     ' Velocidad inicial (ms entre pasos)
     let paso = 0
     let estado_motor = 1   ' Iniciar con el motor girando
+    let giro = 0
     
     ' Configuraci?n de pines
     let dirsB = %00001111  ' Configurar pines del motor como salidas
@@ -93,6 +95,11 @@ verificar_botones:
     ' Verificar bot?n de parada
     if pinC.2 = 1 then
         let estado_motor = 0
+	  if giro = 0 then
+		  let giro = 1
+	  else
+	  	let giro = 0
+	  endif
         ' Apagar todas las bobinas
         low MOTOR_PIN1
         low MOTOR_PIN2
@@ -182,9 +189,15 @@ mover_motor:
     end select
     
     ' Incrementar paso para el siguiente ciclo
-    let paso = paso + 1
+    if giro = 0 then 
+	    let paso = paso +1
+    else
+	    let paso = paso -1
+    endif
     if paso > 7 then
         let paso = 0
+    elseif paso < 0 then
+	  let paso = 7
     endif
     
     ' Pausa para controlar la velocidad
