@@ -13,7 +13,8 @@ symbol buffer = "O"
 inicio:
     setfreq m8           ' Configura la frecuencia a 8MHz para mejor comunicaci?n
     high B.3             ' LED indicador de encendido
-    pause 1000           ' Espera inicial
+    wait 5           ' Espera inicial
+    low b.3
 main:
     ' Env?a un dato al otro PICAXE
     dato_enviado = counter

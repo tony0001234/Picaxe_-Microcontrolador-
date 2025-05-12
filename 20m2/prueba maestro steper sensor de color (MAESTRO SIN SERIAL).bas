@@ -5,22 +5,27 @@ symbol btn_parada = pinB.7   ' Bot?n de parada de emergencia
 symbol btn_finalizar = pinB.6 ' Bot?n para finalizar el proceso
 symbol btn_inicio = pinB.5    ' Bot?n de inicio
 
-symbol signal = c.7
-symbol signal_recibida = pinC.6
+' PINES DE COMUNICACI?N (NUEVOS) - REEMPLAZO DE LA COMUNICACI?N SERIAL
+symbol com_out_1 = C.0     ' Se?ales de salida para comunicaci?n (antes TX)
+symbol com_out_2 = B.3     ' Segunda l?nea de comunicaci?n de salida
+symbol com_out_3 = B.4     ' Tercera l?nea de comunicaci?n de salida
+symbol com_out_4 = B.5     ' Cuarta l?nea de comunicaci?n de salida
+
+symbol com_in_1 = pinC.0   ' Se?ales de entrada para comunicaci?n (antes RX)
+symbol com_in_2 = pinC.1   ' Segunda l?nea de comunicaci?n de entrada
+symbol com_in_3 = pinC.6   ' Tercera l?nea de comunicaci?n de entrada
+symbol com_in_4 = pinC.7   ' Cuarta l?nea de comunicaci?n de entrada (antes signal)
+
 ' Pines para el sensor de color TCS3200
 symbol S0 = C.4
-symbol S1 = C.5             ' Cambiado para evitar conflicto con B.5
-symbol S2 = C.2             ' Cambiado para evitar conflicto con B.6
+symbol S1 = C.5             
+symbol S2 = C.2             
 symbol S3 = C.3
-symbol sensorOUT = pinC.1   ' Entrada de frecuencia del sensor de color
+symbol sensorOUT = pinB.0   ' Entrada de frecuencia del sensor de color (movido desde C.1)
 
-' Pines para comunicaci?n serial
-symbol TX = C.0             ' Salida serial al PICAXE esclavo
-symbol RX = B.0             ' Entrada serial desde PICAXE esclavo
-
-' Pines para LEDs indicadores (opcional)
+' Pines para LEDs indicadores
 symbol led_rojo = B.2       ' LED indicador de color rojo detectado
-symbol led_verde = B.3      ' LED indicador de color verde detectado
+symbol led_verde = C.1       ' LED indicador de color verde detectado (movido desde B.3)
 symbol led_azul = B.4       ' LED indicador de color azul detectado
 symbol led_estado = B.1     ' LED indicador de estado/error
 
@@ -39,31 +44,40 @@ symbol temp2 = w9
 symbol temp3 = w10
 
 symbol i = b0
+
 ' Variables para comunicaci?n bidireccional
 symbol contador_objetos = b10    ' Contador de objetos detectados por IR
 symbol estado_esclavo = b11      ' Estado del esclavo (0=normal, 1=parada)
 symbol comando_actual = b13      ' Comando actual enviado al esclavo
 symbol ultimo_comando = b14      ' ?ltimo comando enviado al esclavo
 symbol tiempo_espera = b15       ' Tiempo de espera para respuesta
-symbol comando_recibido = w11
+symbol comando_recibido = b12    ' Comando recibido del esclavo
 
-symbol iniciar = "I"
-symbol parada = "P"
-symbol resetear = "T"
-symbol nada = "X"
-symbol finalizar = "F"
-symbol cmd_rojo = "R"
-symbol cmd_verde = "G"
-symbol cmd_azul = "B"
-symbol continuar = "O"
-symbol objeto_detectado = "Z"
+' C?digos de comandos (definidos por los patrones de pines)
+symbol CMD_NADA = 0         ' 0000 - No hacer nada
+symbol CMD_INICIAR = 1      ' 0001 - Iniciar operaci?n
+symbol CMD_PARADA = 2       ' 0010 - Parada de emergencia
+symbol CMD_RESETEAR = 3     ' 0011 - Resetear sistema
+symbol CMD_FINALIZAR = 4    ' 0100 - Finalizar operaci?n
+symbol CMD_ROJO = 5         ' 0101 - Mover a posici?n roja
+symbol CMD_VERDE = 6        ' 0110 - Mover a posici?n verde
+symbol CMD_AZUL = 7         ' 0111 - Mover a posici?n azul
+symbol CMD_CONTINUAR = 8    ' 1000 - Confirmaci?n/Continuar
+symbol CMD_OBJETO = 9       ' 1001 - Objeto detectado
+symbol CMD_CONTADOR = 10    ' 1010 - Env?o de contador de objetos
 
 ' === Configuraci?n inicial ===
 inicio:
   setfreq m8                ' Configurar frecuencia a 8MHz para estabilidad
   contador_objetos = 0      ' Inicializar contador
   estado_esclavo = 0        ' Estado normal
-  ultimo_comando = "X"      ' Inicializar ?ltimo comando
+  ultimo_comando = CMD_NADA ' Inicializar ?ltimo comando
+
+  ' Inicializar pines de comunicaci?n de salida a bajo
+  low com_out_1
+  low com_out_2
+  low com_out_3
+  low com_out_4
 
   ' Configurar pines de salida para LEDs
   low led_rojo
@@ -71,154 +85,261 @@ inicio:
   low led_azul
   low led_estado
   
-    ' Se?alizaci?n de arranque (parpadeo del LED de estado)
+  ' Se?alizaci?n de arranque (parpadeo del LED de estado)
   for i = 1 to 5
     high led_estado
     pause 200
     low led_estado
     pause 200
   next i
-goto espera_inicio
+  
+  goto espera_inicio
+
+' Subrutina para enviar comandos por los pines de comunicaci?n
+enviar_comando:
+  ' b13 contiene el comando a enviar
+  if b13.0 = 1 then high com_out_1 else low com_out_1
+  if b13.1 = 1 then high com_out_2 else low com_out_2
+  if b13.2 = 1 then high com_out_3 else low com_out_3
+  if b13.3 = 1 then high com_out_4 else low com_out_4
+  
+  ' Pulso para indicar que los datos est?n listos
+  pause 100
+  return
+
+' Subrutina para leer comandos desde los pines de comunicaci?n
+leer_comando:
+  ' Leer el estado de los pines de entrada
+  b12 = 0 ' Resetear comando recibido
+  if com_in_1 = 1 then b12.0 = 1
+  if com_in_2 = 1 then b12.1 = 1
+  if com_in_3 = 1 then b12.2 = 1
+  if com_in_4 = 1 then b12.3 = 1
+  
+  ' Esperar a que la se?al se estabilice
+  pause 100
+  return
 
 espera_inicio:
   if btn_inicio = 1 then 
     ' Esperar a que se suelte el bot?n para evitar rebotes
     do : pause 50 : loop until btn_inicio = 0
     
-    high signal
-    if signal_recibida = 1 then
     ' Enviar se?al de inicializaci?n al esclavo
-    	comando_recibido = 0
-	serout c.0, T4800_8, (iniciar, 13, 10)
-	sertxd ("Mensaje enviado: ", iniciar, CR, LF)
-	pause 50
-	serin b.0, T4800_8, comando_recibido
-	sertxd ("Mensaje recibido: ", comando_recibido, CR, LF)
-	for i = 1 to 5
-	      high led_estado
-	      pause 200
-	      low led_estado
-      	pause 200
-    next i
-    goto ciclo_principal
+    b13 = CMD_INICIAR
+    gosub enviar_comando
+    
+    ' Esperar confirmaci?n del esclavo
+    gosub leer_comando
+    
+    ' Verificar si recibimos confirmaci?n
+    if b12 = CMD_CONTINUAR then
+      ' Secuencia de parpadeo para confirmar inicio
+      for i = 1 to 5
+        high led_estado
+        pause 200
+        low led_estado
+        pause 200
+      next i
+      goto ciclo_principal
     endif
   endif
-goto espera_inicio
+  goto espera_inicio
 
 ciclo_principal:
-pause 50
-  serin b.0, T4800_8, comando_recibido
+  pause 50
+  
+  ' Leer comando entrante del esclavo
+  gosub leer_comando
+  comando_recibido = b12
 
   ' Verificar bot?n de parada de emergencia
-if btn_parada = 0 then
-	  do 
-		  pause 50
-	loop until btn_parada = 1
-	  
-	 estado_esclavo = 1      ' Marcar estado de parada
-	 
-    serout C.0, T4800_8, (parada, 13, 10)
-    serin B.0, T4800_8, comando_recibido
-    sertxd ("Mensaje recibido: ", comando_recibido, 13,10)
+  if btn_parada = 0 then
+    do 
+      pause 50
+    loop until btn_parada = 1
+    
+    estado_esclavo = 1      ' Marcar estado de parada
+    
+    ' Enviar comando de parada
+    b13 = CMD_PARADA
+    gosub enviar_comando
+    
+    ' Esperar confirmaci?n
+    gosub leer_comando
+    
+    ' Indicaci?n visual
     for i = 0 to 10
-	        high led_estado
-	        pause 250
-	        low led_estado
-	  next i
-	serin B.0, T4800_8, comando_recibido
-	serout C.0, T4800_8, (continuar, 13,10)
-	sertxd ("Objetos contados: ",comando_recibido,CR,LF)
-	sertxd ("Precione el boton resetear.",CR,LF)
-endif
+      high led_estado
+      pause 250
+      low led_estado
+      pause 250
+    next i
+    
+    ' Esperar contador de objetos
+    gosub leer_comando
+    if b12 = CMD_CONTADOR then
+      ' Leer valor del contador
+      gosub leer_comando
+      contador_objetos = b12
+      
+      ' Confirmar recepci?n
+      b13 = CMD_CONTINUAR
+      gosub enviar_comando
+      
+      sertxd ("Objetos contados: ", #contador_objetos, CR, LF)
+      sertxd ("Presione el bot?n resetear.", CR, LF)
+    endif
+  endif
 
-if comando_recibido = parada then
-	  sertxd ("Mensaje recibido: ", comando_recibido, 13,10)
-	  for i = 0 to 10
-	        high led_estado
-	        pause 250
-	        low led_estado
-	  next i
-	  serout C.0, T4800_8, (continuar, 13,10)
-	  serin B.0, T4800_8, (comando_recibido, 13,10)
-	serout C.0, T4800_8, (continuar, 13,10)
-	sertxd ("Objetos contados: ", comando_recibido, 13,10)
-endif 
+  ' Procesar comando de parada recibido
+  if comando_recibido = CMD_PARADA then
+    ' Indicaci?n visual
+    for i = 0 to 10
+      high led_estado
+      pause 250
+      low led_estado
+      pause 250
+    next i
+    
+    ' Confirmar recepci?n
+    b13 = CMD_CONTINUAR
+    gosub enviar_comando
+    
+    ' Esperar contador de objetos
+    gosub leer_comando
+    if b12 = CMD_CONTADOR then
+      ' Leer valor del contador
+      gosub leer_comando
+      contador_objetos = b12
+      
+      ' Confirmar recepci?n
+      b13 = CMD_CONTINUAR
+      gosub enviar_comando
+      
+      sertxd ("Objetos contados: ", #contador_objetos, CR, LF)
+    endif
+  endif 
 
-if comando_recibido = resetear then
-		  sertxd ("Mensaje recibido: ", comando_recibido, 13,10)
-		  serout C.0, T4800_8, (continuar, 13,10)
-		  for i = 0 to 10
-		        high led_estado
-		        pause 250
-		        low led_estado
-	  	next i
-		serin b.0, T4800_8, (comando_recibido, 13,10)
-		serout c.0, T4800_8, (continuar, 13,10)
-		sertxd ("Objetos contados: ", comando_recibido, 13,10)
-		for i = 0 to 10
-	        high led_estado
-	        pause 250
-	        low led_estado
-	  next i
-endif
-	  
+  ' Procesar comando de reset recibido
+  if comando_recibido = CMD_RESETEAR then
+    ' Confirmar recepci?n
+    b13 = CMD_CONTINUAR
+    gosub enviar_comando
+    
+    ' Indicaci?n visual
+    for i = 0 to 10
+      high led_estado
+      pause 250
+      low led_estado
+      pause 250
+    next i
+    
+    ' Esperar contador de objetos (que deber?a ser 0)
+    gosub leer_comando
+    if b12 = CMD_CONTADOR then
+      ' Leer valor del contador
+      gosub leer_comando
+      contador_objetos = b12
+      
+      ' Confirmar recepci?n
+      b13 = CMD_CONTINUAR
+      gosub enviar_comando
+      
+      sertxd ("Objetos contados: ", #contador_objetos, CR, LF)
+      
+      ' Indicaci?n visual
+      for i = 0 to 10
+        high led_estado
+        pause 250
+        low led_estado
+        pause 250
+      next i
+    endif
+  endif
+  
   ' Verificar bot?n de finalizaci?n
-if btn_finalizar = 1 then
-	  do
-		  pause 50
-	loop until btn_finalizar = 0
-	  comando_recibido = 0
-	  	serout c.0, T4800_8, (finalizar, 13,10)
-		serin b.0, T4800_8, (comando_recibido, 13,10)
-	    for i = 0 to 10
-	        high led_estado
-	        pause 250
-	        low led_estado
-	  next i
-	serin b.0, T4800_8, (comando_recibido,13,10)
-	serout c.0, T4800_8, (continuar, 13,10)
-	sertxd ("Objetos contados: ",comando_recibido,CR,LF)
-	    for i = 0 to 10
-	        high led_estado
-	        pause 250
-	        low led_estado
-	  next i
+  if btn_finalizar = 1 then
+    do
+      pause 50
+    loop until btn_finalizar = 0
+    
+    ' Enviar comando de finalizaci?n
+    b13 = CMD_FINALIZAR
+    gosub enviar_comando
+    
+    ' Esperar confirmaci?n
+    gosub leer_comando
+    
+    ' Indicaci?n visual
+    for i = 0 to 10
+      high led_estado
+      pause 250
+      low led_estado
+      pause 250
+    next i
+    
+    ' Esperar contador de objetos
+    gosub leer_comando
+    if b12 = CMD_CONTADOR then
+      ' Leer valor del contador
+      gosub leer_comando
+      contador_objetos = b12
+      
+      ' Confirmar recepci?n
+      b13 = CMD_CONTINUAR
+      gosub enviar_comando
+      
+      sertxd ("Objetos contados: ", #contador_objetos, CR, LF)
+      
+      ' Indicaci?n visual
+      for i = 0 to 10
+        high led_estado
+        pause 250
+        low led_estado
+        pause 250
+      next i
+    endif
+    
     goto inicio
-endif
+  endif
 
-if comando_recibido = objeto_detectado then	
+  ' Procesar comando de objeto detectado
+  if comando_recibido = CMD_OBJETO then
+    sertxd ("-Objeto detectado-", CR, LF)
+    
+    ' Confirmar recepci?n
+    b13 = CMD_CONTINUAR
+    gosub enviar_comando
 
-sertxd ("-Objeto detectado-")
-serout c.0, T4800_8, (continuar, 13,10)
-
-		  ' ===== ALGORITMO MEJORADO DE DETECCI?N DE COLORES =====
-  ' Configurar escala del sensor (20%)
-  high S0
-  low S1
-  
-  ' Primero, leer valor sin filtro como referenci
-  high S2
-  low S3
-  pause 100
-  count C.1, 200, blanco
-  
-  ' Leer el color rojo
-  low S2
-  low S3
-  pause 100
-  count C.1, 200, rojo
-  
-  ' Leer el color verde
-  high S2
-  high S3
-  pause 100
-  count C.1, 200, verde
-  
-  ' Leer el color azul
-  low S2
-  high S3
-  pause 100
-  count C.1, 200, azul
+    ' ===== ALGORITMO MEJORADO DE DETECCI?N DE COLORES =====
+    ' Configurar escala del sensor (20%)
+    high S0
+    low S1
+    
+    ' Primero, leer valor sin filtro como referencia
+    high S2
+    low S3
+    pause 100
+    count B.0, 200, blanco
+    
+    ' Leer el color rojo
+    low S2
+    low S3
+    pause 100
+    count B.0, 200, rojo
+    
+    ' Leer el color verde
+    high S2
+    high S3
+    pause 100
+    count B.0, 200, verde
+    
+    ' Leer el color azul
+    low S2
+    high S3
+    pause 100
+    count C.1, 200, azul
   
   ' 1. Asegurarse de que los valores sean inversamente proporcionales
   temp = 1+rojo

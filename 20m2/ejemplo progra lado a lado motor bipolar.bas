@@ -1,8 +1,8 @@
 
 ' Definici?n de pines de control
-symbol dir = c.0    ' Direcci?n del motor
-symbol step1 = c.2  ' Pulso para el paso
-symbol enable = c.1 ' Habilita el driver
+symbol dir = d.2    ' Direcci?n del motor
+symbol step1 =d.3  ' Pulso para el paso
+symbol enable = c.4 ' Habilita el driver
 
 
 symbol i = b2  ' Variable de iteraci?n

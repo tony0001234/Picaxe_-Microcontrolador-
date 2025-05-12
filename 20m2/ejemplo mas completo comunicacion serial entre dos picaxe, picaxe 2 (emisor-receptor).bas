@@ -1,5 +1,5 @@
 ' PICAXE 2 - Receptor/Transmisor
-#picaxe 20m2
+#picaxe 20x2
 #terminal 9600
 
 symbol rx_pin = b.0      ' Pin de recepci?n en PICAXE 2
@@ -15,7 +15,8 @@ symbol buffer = "I"
 inicio:
     setfreq m8           ' Configura la frecuencia a 8MHz para mejor comunicaci?n
     high B.6             ' LED indicador de encendido
-    pause 1000           ' Espera inicial
+    wait 5           ' Espera inicial
+    low b.6
     counter = 50         ' Inicia el contador en un valor diferente
 
 main:

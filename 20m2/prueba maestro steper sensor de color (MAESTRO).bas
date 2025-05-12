@@ -82,7 +82,7 @@ goto espera_inicio
 
 espera_inicio:
   if btn_inicio = 1 then 
-    ' Esperar a que se suelte el bot?n para evitar rebotes
+    ' Esperar a que se suelte el boton para evitar rebotes
     do : pause 50 : loop until btn_inicio = 0
     
     high signal
