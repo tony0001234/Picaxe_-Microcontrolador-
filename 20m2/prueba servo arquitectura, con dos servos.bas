@@ -1,6 +1,6 @@
 
-symbol SERVO_PIN = b.0       ' Pin del servo
-symbol SERVO_PIN2 = b.1
+symbol SERVO_PIN = c.1       ' Pin del servo
+symbol SERVO_PIN2 = c.2
 'symbol POT_PIN = C.7         ' Pin del potenci?metro
 'symbol pot_value = w0         ' Variable para almacenar valor del ADC
 

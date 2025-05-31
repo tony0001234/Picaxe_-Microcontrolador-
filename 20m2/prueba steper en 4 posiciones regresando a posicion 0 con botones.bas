@@ -8,16 +8,16 @@ symbol boton3 = pinA.2      ' Bot?n 3 - Posici?n 200? (111 pasos)
 symbol boton4 = pinA.3      ' Bot?n 4 - Posici?n 300? (167 pasos)
 
 ' Pines control del motor stepper
-symbol dir_salida = c.1     ' Direcci?n
-symbol enable = c.2         ' Enable para el driver
-symbol estep = c.3          ' Paso
+symbol dir_salida = d.2     ' Direcci?n
+symbol enable = c.4         ' Enable para el driver
+symbol estep = d.3         ' Paso
 
 ' LEDs indicadores (opcional)
-symbol led_estado = B.0     ' LED para indicar estado general
-symbol led_pos1 = B.1       ' LED indicador posici?n 1
-symbol led_pos2 = B.2       ' LED indicador posici?n 2
-symbol led_pos3 = B.3       ' LED indicador posici?n 3
-symbol led_pos4 = B.4       ' LED indicador posici?n 4
+symbol led_estado = c.0     ' LED para indicar estado general
+symbol led_pos1 = a.5       ' LED indicador posici?n 1
+symbol led_pos2 = a.6       ' LED indicador posici?n 2
+symbol led_pos3 = a.7       ' LED indicador posici?n 3
+symbol led_pos4 = b.0       ' LED indicador posici?n 4
 
 ' Constantes para posiciones en pasos
 symbol POS_CERO = 0         ' Posici?n 0?
@@ -75,7 +75,7 @@ bucle_principal:
 ' Subrutina para verificar el estado de los botones
 verificar_botones:
     ' Verificar bot?n 1 - Posici?n 0?
-    if boton1 = 1 then
+    if boton1 = 0 then
         ' Esperar a que el bot?n se suelte (debounce)
         do
             pause 20
@@ -214,9 +214,9 @@ realizar_pasos:
     for i = 1 to pasos_mover
         ' Generar pulso para un paso
         high estep
-        pause pausa_paso
+        pause 5
         low estep
-        pause pausa_paso
+        pause 5
         
         ' Parpadear LED cada 10 pasos para mostrar actividad
       '  if i // 10 = 0 then

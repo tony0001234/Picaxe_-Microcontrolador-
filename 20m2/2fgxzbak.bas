@@ -23,9 +23,9 @@ symbol sensor_ir = pinD.0 ' Pin para el sensor IR
 
 ' Constantes para posiciones en grados (convertidas a pasos)
 symbol POS_CERO = 0        ' Posici?n 0?
-symbol POS_ROJO = 50       ' Posici?n 45? 
-symbol POS_VERDE = 100     ' Posici?n 200? 
-symbol POS_AZUL = 157      ' Posici?n 300?  
+symbol POS_ROJO = 50       ' Posici?n 45? (25 pasos reales, pero usando valor directo)
+symbol POS_VERDE = 111     ' Posici?n 200? (111 pasos reales)
+symbol POS_AZUL = 147      ' Posici?n 300? (167 pasos reales)  
 
 ' Pines para el sensor de color TCS3200
 symbol sensorOUT = pinB.7		' Entrada de frecuencia del sensor de color
@@ -169,7 +169,7 @@ ciclo_principal:
 		low enable
 		gosub mover_motor
 		high enable
-		'contador_objetos = 0
+		contador_objetos = 0
 		
 		for i = 1 to 5
 			high led_estado
@@ -201,7 +201,7 @@ ciclo_principal:
 			pause 50
 		loop until sensor_ir = 0
 		
-		contador_objetos = contador_objetos +1
+		inc contador_objetos
 		sertxd("Sensor IR: OK",13,10)
 		sertxd("Objetos contado al momento: ", #contador_objetos,13,10)
 		for i = 1 to 5
@@ -313,8 +313,6 @@ ciclo_principal:
 			low enable		' Habilitamos el motor
 			gosub mover_motor
 			
-			pause 500
-			
 			pos_destino = POS_CERO
 			gosub mover_motor
 			
@@ -356,8 +354,6 @@ ciclo_principal:
 			low enable
 			gosub mover_motor
 			
-			pause 500
-			
 			pos_destino = POS_CERO
 			gosub mover_motor
 			
@@ -395,8 +391,6 @@ ciclo_principal:
 			
 			low enable
 			gosub mover_motor
-			
-			pause 500
 			
 			pos_destino = POS_CERO
 			gosub mover_motor
@@ -446,11 +440,11 @@ mover_motor:
 '		sertxd("pos_destino mayor a pos_actual: ", #pasos_mover,13,10)
 	else
 		' Mover en sentido negativo (retroceder)
-		pasos_mover = pos_actual +4
+		pasos_mover = pos_actual
 		low dir_salida         ' Direcci?n para retroceder
 '		sertxd("pos_destino menor a pos_actual: ", #pasos_mover,13,10)
 	endif
-	
+	wait 1
 	' Solo realizar pasos si hay que moverse
 	if pasos_mover > 0 then
 		gosub realizar_pasos
@@ -462,7 +456,7 @@ return
   
 ' Subrutina para realizar los pasos calculados
 realizar_pasos:
-	for i = 0 to pasos_mover
+	for i = 1 to pasos_mover
 	' Verificar parada de emergencia durante el movimiento
 		if btn_parada = 0 then
 			high enable
@@ -499,12 +493,12 @@ realizar_pasos:
 return
 
 resetear:		
-	'parada_emergencia = 1
+	parada_emergencia = 1
 	do
-		'high led_estado
-		pause 50
-		'''sertxd("Parada de emergencia precionada, precione resetear para restablecer el sistema...",13,10)
-		'low led_estado
+		high led_estado
+		pause 250
+		sertxd("Parada de emergencia precionada, precione resetear para restablecer el sistema...",13,10)
+		low led_estado
 	loop until btn_reset = 1
 
 	sertxd("Boton RESETEAR: OK")
